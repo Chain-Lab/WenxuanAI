@@ -72,13 +72,23 @@
         <textarea
           v-model="inputMessage"
           @keydown.enter.prevent="sendMessage"
-          placeholder="向 AI 助手提问..."
+          :placeholder="inputPlaceholder"
           rows="1"
           ref="textarea"
+          :disabled="inputDisabled"
+          :style="{ 
+            backgroundColor: inputDisabled ? '#f3f4f6' : 'transparent',
+            cursor: inputDisabled ? 'not-allowed' : 'text'
+          }"
         ></textarea>
+        <RealTimeChat 
+          :onMessage="handleRealtimeMessage"
+          :disabled="isLoading"
+          :setInputDisabled="setInputDisabled"
+        />
         <button
           class="send-button"
-          :disabled="isLoading || !inputMessage.trim()"
+          :disabled="isLoading || !inputMessage.trim() || inputDisabled"
           @click="sendMessage"
           title="发送消息"
         >
@@ -105,6 +115,7 @@ import {
   SpeakerWaveIcon,
 } from '@heroicons/vue/24/outline'
 import axios from 'axios'
+import RealTimeChat from './RealTimeChat.vue'
 
 const messages = ref([])
 const inputMessage = ref('')
@@ -128,6 +139,34 @@ const baseSpeed = 30 // 基础打字速度（毫秒）
 // 添加自动滚动控制
 const shouldAutoScroll = ref(true)
 const userHasScrolled = ref(false)
+
+const inputDisabled = ref(false)
+const inputPlaceholder = computed(() => 
+  inputDisabled.value ? '正在实时对话模式，请说小编小编' : '向 AI 助手提问...'
+)
+
+const setInputDisabled = (disabled) => {
+  inputDisabled.value = disabled
+}
+
+const handleRealtimeMessage = (text, isTemp = false) => {
+  if (isTemp) {
+    // 显示临时消息
+    messages.value.push({
+      role: 'assistant',
+      content: text,
+      markdown: '',
+      isTemp: true
+    })
+  } else {
+    // 移除临时消息
+    messages.value = messages.value.filter(m => !m.isTemp)
+    // 设置用户消息
+    inputMessage.value = text
+    // 发送消息
+    sendMessage()
+  }
+}
 
 // 自动调整文本框高度
 const adjustTextareaHeight = () => {

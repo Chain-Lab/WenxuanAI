@@ -1,0 +1,35 @@
+[33mcommit e3b2da61158f8e1c97e414d3bf4b9b6ce0e2cff8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/front_end[m[33m)[m
+Author: xiii-123 <75963075+xiii-123@users.noreply.github.com>
+Date:   Mon Mar 10 14:09:10 2025 +0800
+
+    Delete .vscode directory
+
+[33mcommit d16f4202b598cf05237e870a34bd7de0306baad1[m
+Author: wyh <yihaowang0308@foxmail.com>
+Date:   Mon Mar 10 14:06:28 2025 +0800
+
+    delete .vscode
+
+[33mcommit 3456939578241558306a1fab7fa4ba6ba2ab8026[m
+Author: wyh <yihaowang0308@foxmail.com>
+Date:   Mon Mar 10 14:04:56 2025 +0800
+
+    delete .vscode
+
+[33mcommit 048fc5b982d9ee0ed004012b13baf04b6fffc672[m
+Author: wyh <yihaowang0308@foxmail.com>
+Date:   Mon Mar 10 13:59:24 2025 +0800
+
+    first commit
+
+[33mcommit cb20dc602a247681cae68eb1750d0faa6d3710e7[m
+Author: wyh <yihaowang0308@foxmail.com>
+Date:   Wed Mar 5 21:27:28 2025 +0800
+
+    功能实现完毕，但是未测试前后端stt和tts
+
+[33mcommit 123f0ab77ccc119f8d07b6c619aab42fb15c6f93[m[33m ([m[1;33mtag: [m[1;33m0.1[m[33m)[m
+Author: wyh <yihaowang0308@foxmail.com>
+Date:   Wed Mar 5 20:48:48 2025 +0800
+
+    basic chat

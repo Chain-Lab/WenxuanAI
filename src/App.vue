@@ -45,7 +45,7 @@ body {
 
 .app-container {
   height: 100vh;
-  width: 100%;
+  width: 1200px;
   display: flex;
   justify-content: center;
   background-color: var(--background-color);

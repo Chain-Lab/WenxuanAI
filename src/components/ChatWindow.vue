@@ -1,5 +1,12 @@
 <template>
   <div class="chat-window">
+    <div 
+      v-if="showToast" 
+      class="toast-message"
+      :class="{ 'fade-out': isToastFading }"
+    >
+      {{ toastMessage }}
+    </div>
     <div class="messages" ref="messagesContainer">
       <div v-if="historyLoading" class="loading-indicator">
         <div class="loading-spinner"></div>
@@ -57,7 +64,11 @@
             >
               <SpeakerWaveIcon class="icon" />
             </button>
-            <button class="action-btn" @click="copyMessage(message.content)" title="复制">
+            <button 
+              class="action-btn" 
+              @click="copyMessage(message)" 
+              title="复制"
+            >
               <DocumentDuplicateIcon class="icon" />
             </button>
             <button class="action-btn" @click="deleteMessage(index)" title="删除">
@@ -88,7 +99,7 @@
         />
         <button
           class="send-button"
-          :disabled="isLoading || !inputMessage.trim() || inputDisabled"
+          :disabled="!inputMessage.trim() || inputDisabled"
           @click="sendMessage"
           title="发送消息"
         >
@@ -99,7 +110,7 @@
         </button>
       </div>
       <div class="input-footer">
-        <span class="footer-text">ChatGPT 可能会犯错。请考虑验证重要信息。</span>
+        <span class="footer-text">AI 可能会犯错。请考虑验证重要信息。</span>
       </div>
     </div>
   </div>
@@ -289,13 +300,41 @@ const scrollToBottom = () => {
   }
 }
 
-// 复制消息
-const copyMessage = async (text) => {
+// 添加提示相关的响应式变量
+const showToast = ref(false)
+const isToastFading = ref(false)
+const toastMessage = ref('')
+
+// 显示临时提示
+const showTemporaryToast = (message, duration = 2000) => {
+  toastMessage.value = message
+  showToast.value = true
+  isToastFading.value = false
+  
+  setTimeout(() => {
+    isToastFading.value = true
+    setTimeout(() => {
+      showToast.value = false
+      isToastFading.value = false
+    }, 300)
+  }, duration)
+}
+
+// 修改复制消息函数
+const copyMessage = async (message) => {
   try {
-    await navigator.clipboard.writeText(text)
-    alert('已复制到剪贴板')
+    let textToCopy = ''
+    if (message.role === 'assistant' && message.markdown) {
+      textToCopy = `${message.markdown}\n\n${message.content}`
+    } else {
+      textToCopy = message.content
+    }
+    
+    await navigator.clipboard.writeText(textToCopy)
+    showTemporaryToast('已复制到剪贴板')
   } catch (err) {
     console.error('复制失败:', err)
+    showTemporaryToast('复制失败，请重试')
   }
 }
 
@@ -673,6 +712,7 @@ textarea {
   width: 100%;
   margin: 0.5rem auto 0;
   padding: 0 0.75rem;
+  padding-bottom: 1rem;
   text-align: center;
 }
 
@@ -775,6 +815,25 @@ textarea {
   height: 1px;
   background-color: rgba(0, 0, 0, 0.1);
   margin: 0.5rem 0;
+}
+
+.toast-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  z-index: 1000;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.toast-message.fade-out {
+  opacity: 0;
 }
 </style>
 

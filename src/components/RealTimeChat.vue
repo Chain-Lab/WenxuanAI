@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, inject } from 'vue'
 import { 
   MicrophoneIcon,
   StopIcon
@@ -42,6 +42,9 @@ let mediaStream = null
 const showToast = ref(false)
 const isToastFading = ref(false)
 const toastMessage = ref('')
+
+// 注入设置实时对话模式的方法
+const setRealTimeMode = inject('setRealTimeMode')
 
 // 初始化语音识别
 const initSpeechRecognition = () => {
@@ -203,6 +206,9 @@ const toggleRealTimeMode = async () => {
   
   // 设置输入框状态
   props.setInputDisabled(isRealTimeMode.value)
+  
+  // 设置实时对话模式状态
+  setRealTimeMode(isRealTimeMode.value)
   
   // 显示模式切换提示
   if (isRealTimeMode.value) {

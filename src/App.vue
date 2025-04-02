@@ -1,5 +1,26 @@
 <script setup>
+import { ref, provide } from 'vue';
 import ChatWindow from './components/ChatWindow.vue'
+import Live2d from './components/Live2d.vue'
+
+const isRealTimeMode = ref(false);
+const live2dRef = ref(null);
+
+// 设置实时对话模式状态
+const setRealTimeMode = (value) => {
+  isRealTimeMode.value = value;
+};
+
+// 控制嘴型变换的方法
+const autoMouthMove = (start) => {
+  if (live2dRef.value) {
+    live2dRef.value.autoMouthMove(start);
+  }
+};
+
+// 提供给子组件的方法
+provide('setRealTimeMode', setRealTimeMode);
+provide('autoMouthMove', autoMouthMove);
 </script>
 
 <template>
@@ -11,6 +32,7 @@ import ChatWindow from './components/ChatWindow.vue'
       <ChatWindow />
     </div>
   </div>
+  <Live2d ref="live2dRef" :visible="isRealTimeMode" />
 </template>
 
 <style>

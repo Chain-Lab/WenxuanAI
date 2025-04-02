@@ -117,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, computed } from 'vue'
+import { ref, onMounted, nextTick, computed, inject } from 'vue'
 import { marked } from 'marked'
 import {
   DocumentDuplicateIcon,
@@ -489,36 +489,48 @@ const loadHistory = async (isInitial = false) => {
   }
 }
 
-// 修改音频播放功能，确保只使用 content
+// 注入控制嘴型变换的方法
+const autoMouthMove = inject('autoMouthMove');
+
+// 修改音频播放函数
 const playAudio = async (message) => {
   try {
     // 确保只使用 content 部分
-    const textContent = message.content
+    const textContent = message.content;
 
     // 创建音频上下文
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     
     // 获取音频数据
     const response = await axios.get(`${BACKEND_URL}/tts`, {
       params: { text: textContent },
       responseType: 'arraybuffer'
-    })
+    });
     
     // 解码音频数据
-    const audioBuffer = await audioContext.decodeAudioData(response.data)
+    const audioBuffer = await audioContext.decodeAudioData(response.data);
     
     // 创建音频源
-    const source = audioContext.createBufferSource()
-    source.buffer = audioBuffer
-    source.connect(audioContext.destination)
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioContext.destination);
+    
+    // 播放开始时触发嘴型变换
+    autoMouthMove(true);
+    
+    // 播放结束时停止嘴型变换
+    source.onended = () => {
+      autoMouthMove(false);
+    };
     
     // 播放音频
-    source.start(0)
+    source.start(0);
   } catch (error) {
-    console.error('播放音频失败:', error)
-    alert('播放失败，请稍后重试')
+    console.error('播放音频失败:', error);
+    alert('播放失败，请稍后重试');
+    autoMouthMove(false); // 出错时确保停止嘴型变换
   }
-}
+};
 
 onMounted(async () => {
   watchInput()

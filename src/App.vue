@@ -2,6 +2,7 @@
 import { ref, provide } from 'vue';
 import ChatWindow from './components/ChatWindow.vue'
 import Live2d from './components/Live2d.vue'
+import RealTimeChat from './components/RealTimeChat.vue';
 
 const isRealTimeMode = ref(false);
 const live2dRef = ref(null);
@@ -12,15 +13,15 @@ const setRealTimeMode = (value) => {
 };
 
 // 控制嘴型变换的方法
-const autoMouthMove = (start) => {
-  if (live2dRef.value) {
-    live2dRef.value.autoMouthMove(start);
-  }
-};
+// const autoMouthMove = (start) => {
+//   if (live2dRef.value) {
+//     live2dRef.value.autoMouthMove(start);
+//   }
+// };
 
 // 提供给子组件的方法
 provide('setRealTimeMode', setRealTimeMode);
-provide('autoMouthMove', autoMouthMove);
+// provide('autoMouthMove', autoMouthMove);
 </script>
 
 <template>
@@ -30,9 +31,10 @@ provide('autoMouthMove', autoMouthMove);
         <h1>AI 助手</h1>
       </div>
       <ChatWindow />
+      <RealTimeChat />
     </div>
   </div>
-  <Live2d ref="live2dRef" :visible="isRealTimeMode" />
+  <!-- <Live2d ref="live2dRef" :visible="isRealTimeMode" /> -->
 </template>
 
 <style>

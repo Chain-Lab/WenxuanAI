@@ -118,6 +118,8 @@
 
 <script setup>
 import { ref, onMounted, nextTick, computed, inject } from 'vue'
+import { emitter } from './event-bus'
+
 import { marked } from 'marked'
 import {
   DocumentDuplicateIcon,
@@ -236,47 +238,106 @@ const watchInput = () => {
 }
 
 // 修改发送消息函数
+// const sendMessage = async () => {
+//   if (isLoading.value || !inputMessage.value.trim()) return
+
+//   const userMessage = inputMessage.value.trim()
+//   messages.value.push({
+//     role: 'user',
+//     content: userMessage,
+//     markdown: ''
+//   })
+
+//   inputMessage.value = ''
+//   adjustTextareaHeight()
+//   isLoading.value = true
+  
+//   // 发送消息时强制滚动到底部
+//   await nextTick()
+//   messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+
+//   try {
+//     const formData = new FormData()
+//     formData.append('text', userMessage)
+
+//     const response = await axios.post(`${BACKEND_URL}/chat`, formData)
+    
+//     if (response.data.message) {
+//       const aiMessage = {
+//         role: 'assistant',
+//         content: response.data.message[response.data.message.length - 1].content,
+//         markdown: response.data.message[response.data.message.length - 1].markdown,
+//         isTyping: true,
+//         conversationId: response.data.conversation_id
+//       }
+//       messages.value.push(aiMessage)
+      
+//       // AI 开始回复前滚动到底部
+//       await nextTick()
+//       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+      
+//       await typeMessage(aiMessage.content)
+//       aiMessage.isTyping = false
+      
+//       conversationId.value = response.data.conversation_id
+//     }
+//   } catch (error) {
+//     console.error('发送消息失败:', error)
+//     messages.value.push({
+//       role: 'assistant',
+//       content: '抱歉，发生了一些错误。请稍后重试。',
+//       markdown: ''
+//     })
+//   } finally {
+//     isLoading.value = false
+//     await nextTick()
+//     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+//   }
+// }
 const sendMessage = async () => {
   if (isLoading.value || !inputMessage.value.trim()) return
 
   const userMessage = inputMessage.value.trim()
+  inputMessage.value = ''
+  await sendMessageWithText(userMessage)
+}
+
+const sendMessageWithText = async (text) => {
   messages.value.push({
     role: 'user',
-    content: userMessage,
+    content: text,
     markdown: ''
   })
 
-  inputMessage.value = ''
   adjustTextareaHeight()
   isLoading.value = true
-  
-  // 发送消息时强制滚动到底部
+
   await nextTick()
   messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
 
   try {
     const formData = new FormData()
-    formData.append('text', userMessage)
+    formData.append('text', text)
 
     const response = await axios.post(`${BACKEND_URL}/chat`, formData)
-    
+
     if (response.data.message) {
+      const lastMsg = response.data.message[response.data.message.length - 1]
       const aiMessage = {
         role: 'assistant',
-        content: response.data.message[response.data.message.length - 1].content,
-        markdown: response.data.message[response.data.message.length - 1].markdown,
+        content: lastMsg.content,
+        markdown: lastMsg.markdown,
         isTyping: true,
         conversationId: response.data.conversation_id
       }
       messages.value.push(aiMessage)
-      
-      // AI 开始回复前滚动到底部
+
       await nextTick()
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-      
+
       await typeMessage(aiMessage.content)
       aiMessage.isTyping = false
-      
+
       conversationId.value = response.data.conversation_id
     }
   } catch (error) {
@@ -292,6 +353,14 @@ const sendMessage = async () => {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
   }
 }
+
+onMounted(() => {
+  emitter.on('send-text', sendMessageWithText)
+})
+
+// onBeforeUnmount(() => {
+//   emitter.off('send-text', sendMessageWithText)
+// })
 
 // 滚动到底部
 const scrollToBottom = () => {
@@ -490,7 +559,7 @@ const loadHistory = async (isInitial = false) => {
 }
 
 // 注入控制嘴型变换的方法
-const autoMouthMove = inject('autoMouthMove');
+// const autoMouthMove = inject('autoMouthMove');
 
 // 修改音频播放函数
 const playAudio = async (message) => {
@@ -516,19 +585,19 @@ const playAudio = async (message) => {
     source.connect(audioContext.destination);
     
     // 播放开始时触发嘴型变换
-    autoMouthMove(true);
+    // autoMouthMove(true);
     
     // 播放结束时停止嘴型变换
-    source.onended = () => {
-      autoMouthMove(false);
-    };
+    // source.onended = () => {
+    //   autoMouthMove(false);
+    // };
     
     // 播放音频
     source.start(0);
   } catch (error) {
     console.error('播放音频失败:', error);
     alert('播放失败，请稍后重试');
-    autoMouthMove(false); // 出错时确保停止嘴型变换
+    // autoMouthMove(false); // 出错时确保停止嘴型变换
   }
 };
 

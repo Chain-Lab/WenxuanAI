@@ -21,6 +21,7 @@
 
 <script setup>
 import { ref, watch, onUnmounted, inject } from 'vue'
+import { emitter } from './event-bus'
 import { 
   MicrophoneIcon,
   StopIcon
@@ -60,6 +61,12 @@ const initSpeechRecognition = () => {
   recognition.value.lang = 'zh-CN'
 
   recognition.value.onresult = handleSpeechResult
+  // 添加识别结束事件，自动重启识别
+  recognition.value.onend = () => {
+    if (isListening.value) {
+      recognition.value.start()
+    }
+  }
   recognition.value.onerror = (event) => {
     console.error('语音识别错误:', event.error)
   }
@@ -82,38 +89,48 @@ const handleSpeechResult = async (event) => {
 
     // 等待用户说下一句话
     await startRecording()
+    isListening.value = true
+    recognition.value.start()
   }
 }
 
 // 开始录音
 const startRecording = async () => {
   try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-    audioContext = new (window.AudioContext || window.webkitAudioContext)()
-    const mediaRecorder = new MediaRecorder(mediaStream)
-    const audioChunks = []
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const mediaRecorder = new MediaRecorder(mediaStream);
+    const audioChunks = [];
 
     mediaRecorder.ondataavailable = (event) => {
-      audioChunks.push(event.data)
-    }
+      audioChunks.push(event.data);
+    };
 
     mediaRecorder.onstop = async () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' })
-      await sendAudioToBackend(audioBlob)
-    }
+      try {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        await sendAudioToBackend(audioBlob);
+        
+      } catch (error) {
+        console.error('请求失败:', error);
+        throw error;
+      } finally {
+        stopMediaStream();
+      }
+    };
 
     // 3秒后自动停止录音
-    mediaRecorder.start()
+    mediaRecorder.start();
     setTimeout(() => {
-      mediaRecorder.stop()
-      stopMediaStream()
-    }, 3000)
+      mediaRecorder.stop();
+    }, 3000);
 
   } catch (error) {
-    console.error('录音失败:', error)
-    alert('无法访问麦克风')
+    console.error('录音失败:', error);
+    alert('无法访问麦克风');
+    throw error;
   }
-}
+};
 
 // 停止媒体流
 const stopMediaStream = () => {
@@ -127,27 +144,20 @@ const stopMediaStream = () => {
   }
 }
 
-// 修改回使用真实后端的发送音频函数
-const sendAudioToBackend = async (audioBlob) => {
+import { debounce } from 'lodash' // 或手动实现防抖
+
+const sendAudioToBackend = debounce(async (audioBlob) => {
   try {
-    props.onMessage('AI正在识别语音...', true)
-
     const formData = new FormData()
-    formData.append('audio', audioBlob)
-
+    formData.append('file', audioBlob)
     const response = await axios.post('/api/stt', formData)
-    const text = response.data.text
-
-    if (text) {
-      props.onMessage(text)
-    } else {
-      throw new Error('语音识别结果为空')
-    }
+    emitter.emit('send-text', response.data.message)
   } catch (error) {
     console.error('语音识别失败:', error)
-    props.onMessage('语音识别失败，请重试', true)
   }
-}
+}, 1000) // 1秒内只允许发送一次
+
+
 
 // 检查麦克风权限和可用性
 const checkMicrophoneAvailability = async () => {

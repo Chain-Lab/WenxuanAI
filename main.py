@@ -7,16 +7,36 @@ from starlette.responses import StreamingResponse
 from config import model_path, temp_path, conversation_db_path
 from tempManager import TempCleanScheduler, async_temp_cleaner
 from fastapi.responses import JSONResponse
-from sql import get_sql, get_book_info
-from faster_whisper import WhisperModel
-from llm import ollama, ollama_stream
+# from faster_whisper import WhisperModel
 from tts import tts
-from config import res_prompt, system_prompt
 from fastapi import FastAPI
 from chatManager import ChatHistoryManager
+from config import *
+from core import AgentManager
+import os
+import logging
+
+log = logging.getLogger('app')
+handler = logging.StreamHandler()
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+handler.setFormatter(formatter)
+log.addHandler(handler)
+log.setLevel(logging.DEBUG) 
 
 
-whisper_model = WhisperModel(model_size_or_path=model_path, device="cuda", compute_type="int8_float16")
+
+# whisper_model = WhisperModel(model_size_or_path=model_path, device="cuda", compute_type="int8_float16")
+whisper_model = None
+agent_manager  = AgentManager(
+                        plugin_src=agent_path, 
+                        base_url=base_url, 
+                        api_key=api_key, 
+                        model_name=llm_model_name,
+                        start_agent_name=start_agent_name,
+                        end_agent_name=end_agent_name
+                    )
 
 app = FastAPI(lifespan=async_temp_cleaner)
 if not os.path.exists(temp_path):
@@ -33,11 +53,6 @@ def add_message_to_conversation(conversation, role, content, markdown=""):
 
 
 # ---------- API接口 ----------
-@app.get("/chat")
-def chat(text:str):
-    sql = get_sql(text)
-    book_info = get_book_info(sql) if sql != "" else ""
-    return StreamingResponse(ollama_stream(res_prompt.format(text, sql, book_info)), media_type="text/event-stream")
 
 @app.get("/conversation/{conversation_id}")
 def get_conversation(conversation_id: str):
@@ -67,15 +82,10 @@ def delete_conversation(conversation_id: str):
 def add_conversation(text:str = Form(...)):
     conversation = new_conversation_context()
     conversation_id = conversation["conversation_id"]
-    sql = get_sql(text)
-    print(sql)
-    sql = sql if sql != "SELECT * FROM data;" else ""
-    book_info = get_book_info(sql) if sql != "" else ""
-    markdown = ollama(system_prompt.format(sql, book_info)) if sql != "" else ""
-    result = ollama(res_prompt.format(text, sql, book_info)).replace('-','\t')
+    result = json.loads(agent_manager(text)[-1]['content'])['answer']
     # print(result)
     add_message_to_conversation(conversation, "user", text)
-    add_message_to_conversation(conversation, "assistant", result, markdown)
+    add_message_to_conversation(conversation, "assistant", result, "")
     with ChatHistoryManager(conversation_db_path) as chm:
         chm.add_record(conversation_id, json.dumps(conversation))
     return conversation

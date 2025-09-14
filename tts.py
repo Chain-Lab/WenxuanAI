@@ -1,9 +1,10 @@
 import requests
+from config import tts_url, ref_audio_path, ref_audio_text
 
 def tts(text):
-    ref_audio = '/home/zwc/tts/GPT-SoVITS-main/nahida.mp3'
-    prompt_text = "过去的经历，使你成为了一个对我和须弥有用的个体，拉拢你的确是我计划的一部分"
-    url = 'http://113.54.158.149:9880/tts'
+    ref_audio = ref_audio_path
+    prompt_text = ref_audio_text
+    url = tts_url
     test_times = 3
     res = None
     while test_times > 0:

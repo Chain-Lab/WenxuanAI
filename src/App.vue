@@ -31,7 +31,7 @@ provide('setRealTimeMode', setRealTimeMode);
         <h1>AI 助手</h1>
       </div>
       <ChatWindow />
-      <RealTimeChat />
+      <!-- <RealTimeChat /> -->
     </div>
   </div>
   <!-- <Live2d ref="live2dRef" :visible="isRealTimeMode" /> -->

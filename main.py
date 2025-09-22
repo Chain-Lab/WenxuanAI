@@ -3,7 +3,6 @@ import uuid
 import json
 import uvicorn
 from fastapi import Form, UploadFile, File, Response
-from starlette.responses import StreamingResponse
 from config import model_path, temp_path, conversation_db_path
 from tempManager import TempCleanScheduler, async_temp_cleaner
 from fastapi.responses import JSONResponse
@@ -34,8 +33,6 @@ agent_manager  = AgentManager(
                         base_url=base_url, 
                         api_key=api_key, 
                         model_name=llm_model_name,
-                        start_agent_name=start_agent_name,
-                        end_agent_name=end_agent_name
                     )
 
 app = FastAPI(lifespan=async_temp_cleaner)
@@ -82,7 +79,7 @@ def delete_conversation(conversation_id: str):
 def add_conversation(text:str = Form(...)):
     conversation = new_conversation_context()
     conversation_id = conversation["conversation_id"]
-    result = json.loads(agent_manager(text)[-1]['content'])['answer']
+    result = json.loads(agent_manager(text)[-1]['content'])['data']['answer']
     # print(result)
     add_message_to_conversation(conversation, "user", text)
     add_message_to_conversation(conversation, "assistant", result, "")
